@@ -1,0 +1,418 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#100b29">
+  <meta name="description" content="DoodleDhamaka - Draw, Guess and Win with Friends!">
+  <title>DoodleDhamaka | Draw. Guess. Win.</title>
+
+  <link rel="stylesheet" href="style.css">
+  <script src="/socket.io/socket.io.js" defer></script>
+  <script src="script.js" defer></script>
+</head>
+<body>
+
+  <!-- Decorative background -->
+  <div class="background-effects" aria-hidden="true">
+    <div class="glow glow-one"></div>
+    <div class="glow glow-two"></div>
+    <div class="glow glow-three"></div>
+  </div>
+
+  <!-- Loading Screen -->
+  <div id="loadingScreen" class="loading-screen">
+    <div class="loader-logo">🎨</div>
+    <h1>Doodle<span>Dhamaka</span></h1>
+    <p>Preparing your creative playground...</p>
+    <div class="loader-bar">
+      <div class="loader-progress"></div>
+    </div>
+  </div>
+
+  <!-- Main App -->
+  <div id="app" class="app hidden">
+
+    <!-- Navigation -->
+    <header class="navbar">
+      <a href="#" class="brand" id="homeLogo">
+        <span class="brand-icon">🎨</span>
+        <span>Doodle<b>Dhamaka</b></span>
+      </a>
+
+      <div class="nav-right">
+        <span class="online-indicator">
+          <span class="online-dot"></span>
+          <span id="onlineCount">0</span> Online
+        </span>
+        <button id="soundBtn" class="icon-btn" title="Toggle sound">
+          🔊
+        </button>
+      </div>
+    </header>
+
+    <!-- HOME SCREEN -->
+    <main id="homeScreen" class="screen active">
+
+      <section class="hero">
+        <div class="hero-badge">
+          ✨ THE ULTIMATE DRAW & GUESS PARTY
+        </div>
+
+        <h1>
+          DRAW IT.<br>
+          <span class="gradient-text">GUESS IT.</span><br>
+          WIN IT!
+        </h1>
+
+        <p class="hero-description">
+          Unleash your creativity, challenge your friends
+          and become the ultimate doodle champion!
+        </p>
+
+        <div class="hero-decoration" aria-hidden="true">
+          <span>✏️</span>
+          <span>🎨</span>
+          <span>⭐</span>
+          <span>🚀</span>
+        </div>
+      </section>
+
+      <section class="play-panel">
+
+        <div class="panel-header">
+          <h2>Ready to Play?</h2>
+          <p>Choose your identity and jump into the fun.</p>
+        </div>
+
+        <div class="profile-preview">
+          <div id="avatarPreview" class="avatar-preview">
+            😎
+          </div>
+          <div>
+            <strong>Your Player</strong>
+            <p>Pick your lucky avatar!</p>
+          </div>
+        </div>
+
+        <label for="playerName" class="field-label">
+          PLAYER NAME
+        </label>
+
+        <input
+          type="text"
+          id="playerName"
+          maxlength="16"
+          placeholder="Enter your cool nickname"
+          autocomplete="nickname"
+        >
+
+        <div class="avatar-section">
+          <span class="field-label">CHOOSE AVATAR</span>
+
+          <div id="avatarList" class="avatar-list">
+            <button class="avatar-option selected" data-avatar="😎">😎</button>
+            <button class="avatar-option" data-avatar="🤖">🤖</button>
+            <button class="avatar-option" data-avatar="🦊">🦊</button>
+            <button class="avatar-option" data-avatar="🐼">🐼</button>
+            <button class="avatar-option" data-avatar="👽">👽</button>
+            <button class="avatar-option" data-avatar="🦁">🦁</button>
+          </div>
+        </div>
+
+        <button id="createRoomBtn" class="btn btn-primary">
+          <span>🚀</span> CREATE PRIVATE ROOM
+        </button>
+
+        <div class="separator"><span>OR JOIN FRIENDS</span></div>
+
+        <div class="join-room-row">
+          <input
+            id="roomCodeInput"
+            type="text"
+            maxlength="6"
+            placeholder="6-digit Room Code"
+            autocomplete="off"
+          >
+          <button id="joinRoomBtn" class="btn btn-secondary">
+            JOIN →
+          </button>
+        </div>
+
+        <p id="homeError" class="error-text" role="alert"></p>
+      </section>
+
+      <section class="features">
+        <div class="feature-card">
+          <span>⚡</span>
+          <h3>Real-time Fun</h3>
+          <p>Draw and guess together live.</p>
+        </div>
+
+        <div class="feature-card">
+          <span>🏆</span>
+          <h3>Win Points</h3>
+          <p>Guess faster to climb the leaderboard.</p>
+        </div>
+
+        <div class="feature-card">
+          <span>👥</span>
+          <h3>Play with Friends</h3>
+          <p>Create private rooms and invite your crew.</p>
+        </div>
+      </section>
+    </main>
+
+    <!-- ROOM LOBBY -->
+    <section id="lobbyScreen" class="screen hidden">
+
+      <div class="lobby-container">
+        <div class="section-heading">
+          <span class="section-badge">🎉 PARTY LOBBY</span>
+          <h2>Waiting for Players</h2>
+          <p>Invite your friends and get ready!</p>
+        </div>
+
+        <div class="room-code-card">
+          <span>YOUR ROOM CODE</span>
+          <div id="displayRoomCode" class="room-code">------</div>
+          <button id="copyCodeBtn" class="btn btn-outline">
+            📋 Copy Code
+          </button>
+          <button id="shareRoomBtn" class="btn btn-outline">
+            🔗 Share Room
+          </button>
+        </div>
+
+        <div class="lobby-card">
+          <div class="card-title-row">
+            <h3>👥 Players</h3>
+            <span id="lobbyPlayerCount">0/8</span>
+          </div>
+
+          <div id="lobbyPlayers" class="lobby-players"></div>
+        </div>
+
+        <div class="lobby-card" id="settingsPanel">
+          <h3>⚙️ Game Settings</h3>
+
+          <label for="roundSelect">Rounds</label>
+          <select id="roundSelect">
+            <option value="3">3 Rounds</option>
+            <option value="5" selected>5 Rounds</option>
+            <option value="8">8 Rounds</option>
+          </select>
+
+          <label for="timeSelect">Drawing Time</label>
+          <select id="timeSelect">
+            <option value="60">60 Seconds</option>
+            <option value="80" selected>80 Seconds</option>
+            <option value="90">90 Seconds</option>
+          </select>
+
+          <label for="languageSelect">Word Language</label>
+          <select id="languageSelect">
+            <option value="en">English</option>
+            <option value="hi">Hindi</option>
+            <option value="mixed">Hindi + English</option>
+          </select>
+        </div>
+
+        <button id="startGameBtn" class="btn btn-primary">
+          🎮 START GAME
+        </button>
+
+        <p id="lobbyMessage" class="info-text"></p>
+
+        <button id="leaveLobbyBtn" class="btn btn-danger">
+          Leave Room
+        </button>
+      </div>
+    </section>
+
+    <!-- GAME SCREEN -->
+    <section id="gameScreen" class="screen hidden">
+
+      <div class="game-header">
+        <div class="game-stat">
+          <small>ROUND</small>
+          <strong id="roundDisplay">1 / 5</strong>
+        </div>
+
+        <div class="game-stat timer-stat">
+          <small>TIME LEFT</small>
+          <strong id="timerDisplay">80</strong>
+        </div>
+
+        <div class="game-stat">
+          <small>ROOM</small>
+          <strong id="gameRoomCode">------</strong>
+        </div>
+      </div>
+
+      <div class="word-display">
+        <span id="wordHint">_ _ _ _ _</span>
+        <p id="turnStatus">Waiting for the round...</p>
+      </div>
+
+      <div class="game-layout">
+
+        <!-- Players -->
+        <aside class="game-sidebar">
+          <div class="card-title-row">
+            <h3>🏆 Leaderboard</h3>
+          </div>
+          <div id="leaderboardList" class="leaderboard-list"></div>
+        </aside>
+
+        <!-- Drawing Board -->
+        <div class="drawing-area">
+
+          <div class="canvas-topbar">
+            <span>🎨 DOODLE BOARD</span>
+            <span id="drawerName">Waiting...</span>
+          </div>
+
+          <div class="canvas-container">
+            <canvas
+              id="drawingCanvas"
+              width="900"
+              height="600"
+              aria-label="Multiplayer drawing board"
+            ></canvas>
+          </div>
+
+          <div id="drawingTools" class="drawing-tools">
+            <div id="colorPalette" class="color-palette">
+              <button class="color-swatch active" data-color="#171717" style="background:#171717"></button>
+              <button class="color-swatch" data-color="#ffffff" style="background:#ffffff"></button>
+              <button class="color-swatch" data-color="#ef4444" style="background:#ef4444"></button>
+              <button class="color-swatch" data-color="#f97316" style="background:#f97316"></button>
+              <button class="color-swatch" data-color="#facc15" style="background:#facc15"></button>
+              <button class="color-swatch" data-color="#22c55e" style="background:#22c55e"></button>
+              <button class="color-swatch" data-color="#3b82f6" style="background:#3b82f6"></button>
+              <button class="color-swatch" data-color="#a855f7" style="background:#a855f7"></button>
+              <button class="color-swatch" data-color="#ec4899" style="background:#ec4899"></button>
+              <button class="color-swatch" data-color="#92400e" style="background:#92400e"></button>
+            </div>
+
+            <div class="tool-actions">
+              <button id="brushBtn" class="tool-btn active" title="Brush">🖌️</button>
+              <button id="eraserBtn" class="tool-btn" title="Eraser">🧽</button>
+
+              <label class="brush-size-label">
+                Size
+                <input
+                  id="brushSize"
+                  type="range"
+                  min="2"
+                  max="35"
+                  value="6"
+                >
+              </label>
+
+              <button id="undoBtn" class="tool-btn" title="Undo">↩️</button>
+              <button id="clearCanvasBtn" class="tool-btn" title="Clear">🗑️</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Guess Chat -->
+        <aside class="chat-panel">
+          <div class="chat-header">
+            <h3>💬 Guess Chat</h3>
+            <span>LIVE</span>
+          </div>
+
+          <div
+            id="chatMessages"
+            class="chat-messages"
+            aria-live="polite"
+          ></div>
+
+          <form id="guessForm" class="chat-input-area">
+            <input
+              id="guessInput"
+              type="text"
+              maxlength="80"
+              placeholder="Type your guess..."
+              autocomplete="off"
+            >
+            <button id="sendGuessBtn" type="submit">
+              ➤
+            </button>
+          </form>
+        </aside>
+      </div>
+
+      <div class="game-footer">
+        <button id="leaveGameBtn" class="btn btn-danger">
+          🚪 Leave Game
+        </button>
+      </div>
+    </section>
+
+    <!-- WORD CHOICE MODAL -->
+    <div id="wordModal" class="modal hidden">
+      <div class="modal-card">
+        <span class="modal-icon">✏️</span>
+        <h2>Choose a Word!</h2>
+        <p>Pick something fun to draw.</p>
+        <div id="wordChoices" class="word-choices"></div>
+      </div>
+    </div>
+
+    <!-- ROUND RESULT MODAL -->
+    <div id="roundResultModal" class="modal hidden">
+      <div class="modal-card">
+        <span class="modal-icon">⏰</span>
+        <h2>Round Complete!</h2>
+        <p>The correct word was:</p>
+        <h3 id="correctWordDisplay">---</h3>
+        <div id="roundScores"></div>
+        <p>Next round starting soon...</p>
+      </div>
+    </div>
+
+    <!-- FINAL RESULTS -->
+    <section id="resultScreen" class="screen hidden">
+      <div class="results-container">
+        <div class="trophy-animation">🏆</div>
+
+        <span class="section-badge">GAME OVER</span>
+        <h1>We Have a Winner!</h1>
+
+        <div id="winnerAvatar" class="winner-avatar">👑</div>
+        <h2 id="winnerName">Champion</h2>
+        <p id="winnerScore">0 Points</p>
+
+        <div class="final-leaderboard">
+          <h3>Final Standings</h3>
+          <div id="finalScores"></div>
+        </div>
+
+        <button id="playAgainBtn" class="btn btn-primary">
+          🔄 PLAY AGAIN
+        </button>
+
+        <button id="backHomeBtn" class="btn btn-outline">
+          🏠 BACK HOME
+        </button>
+      </div>
+    </section>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast hidden" role="status"></div>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+      <p>Made with ❤️ for creative minds</p>
+      <p>© 2026 DoodleDhamaka. All Rights Reserved.</p>
+    </footer>
+
+  </div>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
